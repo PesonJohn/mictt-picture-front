@@ -67,6 +67,11 @@ const router = createRouter({
       component: () => import("../pages/MySpacePage.vue"),
     },
     {
+      path: '/search_picture',
+      name: '图片搜索',
+      component: () => import("../pages/SearchPicturePage.vue"),
+    },
+    {
       path: '/about',
       name: '关于',
       component: () => import("../views/AboutView.vue")

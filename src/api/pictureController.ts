@@ -122,6 +122,21 @@ export async function reviewPictureUsingPost(
   })
 }
 
+/** searchPictureByPicture POST /api/picture/search_picture */
+export async function searchPictureByPictureUsingPost(
+  body: API.SearchPictureByPictureRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListImageSearchResult_>('/api/picture/search_picture', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** listPictureTagCategory GET /api/picture/tag_category */
 export async function listPictureTagCategoryUsingGet(options?: { [key: string]: any }) {
   return request<API.BaseResponsePictureTagCategory_>('/api/picture/tag_category', {
