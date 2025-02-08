@@ -80,8 +80,6 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
-import { PIC_REVIEW_STATUS_OPTIONS } from '../constants/picture'
-import type { RangeValue } from 'ant-design-vue/es/vc-picker/interface'
 import dayjs from 'dayjs'
 import { listPictureTagCategoryUsingGet } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
@@ -165,6 +163,8 @@ const getTagCategoryOptions = async () => {
 onMounted(() =>{
   getTagCategoryOptions()
 })
+
+
 
 </script>
 

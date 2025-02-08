@@ -21,7 +21,11 @@
     <div style="margin-bottom: 16px"/>
 <!--    搜索表单-->
     <PictureSearchForm :onSearch="onSearch"/>
+    <!-- 按颜色搜索  跟其他搜索条件独立-->
     <div style="margin-bottom: 16px"/>
+    <a-form-item label="按颜色搜索" style="margin-top: 16px">
+      <color-picker format="hex" shape="circle" @pureColorChange="onColorChange" />
+    </a-form-item>
     <!--    图片列表-->
     <PictureList :dataList="dataList" :loading="loading" :show-op="true" :onReload="fetchData"/>
     <!--    分页-->
@@ -40,10 +44,12 @@ import { ref, reactive, computed, onMounted, h } from 'vue'
 import { deleteSpaceUsingPost, getSpaceVoByIdUsingGet } from '@/api/spaceController'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
-import { listPictureVoByPageUsingPost } from '@/api/pictureController'
+import { listPictureVoByPageUsingPost, searchPictureByColorUsingPost } from '@/api/pictureController'
 import { formatSize } from '@/utils'
 import PictureList from '@/components/PictureList.vue'
 import PictureSearchForm from '@/components/PictureSearchForm.vue'
+import {ColorPicker} from 'vue3-colorpicker'
+import 'vue3-colorpicker/style.css'
 
 interface Props {
   id: number | string
@@ -120,6 +126,22 @@ const onSearch = (newSearchParams: API.PictureQueryRequest) => {
     current: 1,
   }
   fetchData()
+}
+
+const onColorChange = async (color: string) => {
+  loading.value = true
+  const res = await searchPictureByColorUsingPost({
+    picColor: color,
+    spaceId: props.id,
+  })
+  if (res.data.code == 0 && res.data.data) {
+    const data = res.data.data ?? []
+    dataList.value = data
+    total.value = data.length
+  } else {
+    message.error('获取数据失败 ' + res.data.msg)
+  }
+  loading.value = false
 }
 </script>
 <style scoped>

@@ -1,14 +1,11 @@
 <template>
   <div id="pictureDetailPage">
-<!--   gutter="[16,16]表示横纵之间的间距 -->
+    <!--   gutter="[16,16]表示横纵之间的间距 -->
     <a-row :gutter="[16, 16]">
       <!-- 图片展示区 -->
       <a-col :sm="24" :md="16" :xl="18">
         <a-card title="图片预览">
-          <a-image
-            style="max-height: 600px; object-fit: contain"
-            :src="picture.url"
-          />
+          <a-image style="max-height: 600px; object-fit: contain" :src="picture.url" />
         </a-card>
       </a-col>
       <!-- 图片信息区 -->
@@ -50,8 +47,21 @@
             <a-descriptions-item label="大小">
               {{ formatSize(picture.picSize) }}
             </a-descriptions-item>
+            <a-descriptions-item label="主色调">
+              <a-space>
+                {{ picture.picColor ?? '-' }}
+                <div
+                  v-if="picture.picColor"
+                  :style="{
+                    backgroundColor: toHexColor(picture.picColor),
+                    width: '16px',
+                    height: '16px',
+                  }"
+                />
+              </a-space>
+            </a-descriptions-item>
           </a-descriptions>
-<!--          图片操作-->
+          <!--          图片操作-->
           <a-space wrap>
             <a-button v-if="canDownload" type="primary" @click="doDownload">
               免费下载
@@ -59,13 +69,21 @@
                 <DownloadOutlined />
               </template>
             </a-button>
-            <a-button v-if="canEdit" :icon="h(EditOutlined)"  type="default" @click="doEdit" target="_blank">编辑</a-button>
-            <a-button v-if="canEdit" :icon="h(DeleteOutlined)" @click="doDelete" danger>删除</a-button>
+            <a-button
+              v-if="canEdit"
+              :icon="h(EditOutlined)"
+              type="default"
+              @click="doEdit"
+              target="_blank"
+              >编辑
+            </a-button>
+            <a-button v-if="canEdit" :icon="h(DeleteOutlined)" @click="doDelete" danger
+              >删除</a-button
+            >
           </a-space>
         </a-card>
       </a-col>
     </a-row>
-
   </div>
 </template>
 
@@ -76,23 +94,21 @@ import {
   getPictureVoByIdUsingGet,
   listPictureByPageUsingPost,
   listPictureTagCategoryUsingGet,
-  listPictureVoByPageUsingPost
+  listPictureVoByPageUsingPost,
 } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
-import { downloadImage, formatSize } from '@/utils'
-import {EditOutlined,DeleteOutlined,DownloadOutlined} from '@ant-design/icons-vue'
+import { downloadImage, formatSize, toHexColor } from '@/utils'
+import { EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 
-interface Props{
+interface Props {
   id: number | string
 }
 
 const props = defineProps<Props>()
 
 const router = useRouter()
-
-
 
 //搜索条件
 const searchParams = reactive<API.PictureQueryRequest>({
@@ -105,22 +121,21 @@ const searchParams = reactive<API.PictureQueryRequest>({
 const loginUserStore = useLoginUserStore()
 
 // 判断是否可以编辑
-const canEdit = computed(() =>{
+const canEdit = computed(() => {
   const loginUser = loginUserStore.loginUser
   //未登录不能编辑
-  if (!loginUser.id){
+  if (!loginUser.id) {
     return false
   }
   //本人或管理员才能编辑
   const user = picture.value.user || {}
-  return  loginUser.id === user.id || loginUser.userRole === 'admin'
+  return loginUser.id === user.id || loginUser.userRole === 'admin'
 })
 
-const canDownload = computed(() =>{
+const canDownload = computed(() => {
   const loginUser = loginUserStore.loginUser
   //未登录不能编辑
-  return loginUser.id;
-
+  return loginUser.id
 })
 
 const doDelete = async () => {
@@ -131,20 +146,19 @@ const doDelete = async () => {
   const res = await deletePictureUsingPost({ id })
   if (res.data.code === 0) {
     message.success('删除成功')
-
   } else {
     message.error('删除失败')
   }
 }
 
-const doEdit = () =>{
+const doEdit = () => {
   //跳转到编辑页面时需要携带spaceId
   router.push({
     path: `/add_picture`,
     query: {
       id: picture.value.id,
-      spaceId: picture.value.spaceId
-    }
+      spaceId: picture.value.spaceId,
+    },
   })
 }
 
@@ -155,31 +169,26 @@ const doDownload = () => {
 const picture = ref<API.PictureVo>({})
 
 //获取图片信息
-const fetchPictureDetail = async () =>{
+const fetchPictureDetail = async () => {
   try {
-    const res = await getPictureVoByIdUsingGet({id: props.id})
-    if (res.data.code === 0 && res.data.data){
+    const res = await getPictureVoByIdUsingGet({ id: props.id })
+    if (res.data.code === 0 && res.data.data) {
       picture.value = res.data.data
-    }else {
+    } else {
       message.error('获取图片信息失败 ' + res.data.msg)
     }
-  }catch (e) {
+  } catch (e) {
     message.error('获取图片信息失败 ' + e.message)
   }
-
 }
 
 //页面加载时获取数据 请求一次
 onMounted(() => {
   fetchPictureDetail()
 })
-
-
 </script>
 <style scoped>
 #pictureDetailPage {
-margin-bottom: 16px;
+  margin-bottom: 16px;
 }
-
-
 </style>

@@ -122,12 +122,27 @@ export async function reviewPictureUsingPost(
   })
 }
 
-/** searchPictureByPicture POST /api/picture/search_picture */
+/** searchPictureByColor POST /api/picture/search/color */
+export async function searchPictureByColorUsingPost(
+  body: API.SearchPictureByColorRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListPictureVo_>('/api/picture/search/color', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** searchPictureByPicture POST /api/picture/search/picture */
 export async function searchPictureByPictureUsingPost(
   body: API.SearchPictureByPictureRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseListImageSearchResult_>('/api/picture/search_picture', {
+  return request<API.BaseResponseListImageSearchResult_>('/api/picture/search/picture', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
