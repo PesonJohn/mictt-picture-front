@@ -69,21 +69,20 @@
                 <DownloadOutlined />
               </template>
             </a-button>
-            <a-button
-              v-if="canEdit"
-              :icon="h(EditOutlined)"
-              type="default"
-              @click="doEdit"
-              target="_blank"
-              >编辑
+            <a-button v-if="canEdit" :icon="h(ShareAltOutlined)" type="primary" ghost @click="doShare">
+              分享
             </a-button>
-            <a-button v-if="canEdit" :icon="h(DeleteOutlined)" @click="doDelete" danger
-              >删除</a-button
-            >
+            <a-button v-if="canEdit" :icon="h(EditOutlined)" type="default" @click="doEdit">
+              编辑
+            </a-button>
+            <a-button v-if="canEdit" :icon="h(DeleteOutlined)" @click="doDelete" danger>
+              删除
+            </a-button>
           </a-space>
         </a-card>
       </a-col>
     </a-row>
+    <ShareModal ref="shareModalRef" :link="shareLink" />
   </div>
 </template>
 
@@ -92,15 +91,13 @@ import { ref, reactive, computed, onMounted, h } from 'vue'
 import {
   deletePictureUsingPost,
   getPictureVoByIdUsingGet,
-  listPictureByPageUsingPost,
-  listPictureTagCategoryUsingGet,
-  listPictureVoByPageUsingPost,
 } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { downloadImage, formatSize, toHexColor } from '@/utils'
-import { EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { EditOutlined, DeleteOutlined, DownloadOutlined, ShareAltOutlined } from '@ant-design/icons-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import ShareModal from '@/components/ShareModal.vue'
 
 interface Props {
   id: number | string
@@ -179,6 +176,16 @@ const fetchPictureDetail = async () => {
     }
   } catch (e) {
     message.error('获取图片信息失败 ' + e.message)
+  }
+}
+
+//分享操作
+const shareModalRef = ref()
+const shareLink = ref<string>()
+const doShare = () => {
+  shareLink.value = `${window.location.protocol}//${window.location.host}/picture/${picture.value.id}`
+  if (shareModalRef.value) {
+    shareModalRef.value.openModal()
   }
 }
 
