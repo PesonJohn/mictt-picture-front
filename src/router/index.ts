@@ -57,6 +57,11 @@ const router = createRouter({
       props: true //该属性为true能通过属性获得动态id
     },
     {
+      path: '/space_analyze',
+      name: '空间分析',
+      component: () => import("../pages/SpaceAnalyzePage.vue"),
+    },
+    {
       path: '/add_space',
       name: '创建空间',
       component: () => import("../pages/AddSpacePage.vue"),
