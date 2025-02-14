@@ -11,6 +11,7 @@ import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import { listSpaceVoByPageUsingPost } from '@/api/spaceController'
 import { message } from 'ant-design-vue'
 import { onMounted } from 'vue'
+import { SPACE_TYPE_ENUM } from '@/constants/space'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
@@ -28,6 +29,7 @@ const checkUserSpace = async () => {
     userId: loginUser.id,
     current: 1,
     pageSize: 1,
+    spaceType: SPACE_TYPE_ENUM.PRIVATE
   })
   if (res.data.code === 0){
     //如果有空间则跳转到第一个空间，如果没有则跳转到添加空间界面

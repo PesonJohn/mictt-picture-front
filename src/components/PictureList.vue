@@ -32,8 +32,8 @@
             <template #actions v-if="showOp">
               <ShareAltOutlined @click="(e) => doShare(picture, e)" />
               <SearchOutlined @click="(e) => doSearch(picture, e)" />
-              <EditOutlined @click="(e) => doEdit(picture, e)" />
-              <DeleteOutlined @click="(e) => doDelete(picture, e)" />
+              <EditOutlined v-if="canEdit" @click="(e) => doEdit(picture, e)" />
+              <DeleteOutlined v-if="canDelete" @click="(e) => doDelete(picture, e)" />
             </template>
           </a-card>
         </a-list-item>
@@ -61,6 +61,8 @@ interface Props {
   dataList?: API.PictureVo[]
   loading?: boolean
   showOp?: boolean //主页不显示操作按钮
+  canEdit?: boolean
+  canDelete?: boolean
   onReload?: () => void
 }
 
@@ -69,6 +71,8 @@ const props = withDefaults(defineProps<Props>(), {
   dataList: () => [],
   loading: false,
   showOp: false,
+  canEdit: false,
+  canDelete: false
 })
 
 const router = useRouter()

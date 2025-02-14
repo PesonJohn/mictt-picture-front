@@ -24,13 +24,14 @@ router.beforeEach(async (to, from, next) => {
       next(`/user/login?redirect=${to.fullPath}`)
       return
     }
-  }else if (!loginUser && toUrl !== '/user/login' ){
+  }
+  else if (!loginUser && toUrl !== '/user/login' ){
     console.log(loginUser)
     message.error("请先登录")
     next(`/user/login?redirect=${to.fullPath}`)
     return
   }
-  // else if (loginUser.userName === '未登录' && !toUrl.startsWith('/user/login') ){
+  // else if (loginUser.userName === '未登录' && toUrl !== '/' && !toUrl.startsWith('/user/login') ){
   //   console.log(loginUser)
   //   message.error("请先登录")
   //   next(`/user/login?redirect=${to.fullPath}`)

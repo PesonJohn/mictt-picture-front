@@ -4,25 +4,34 @@
       <h2>空间管理</h2>
       <a-space>
         <a-button type="primary" href="/add_space" target="_blank">+ 创建空间</a-button>
-        <a-button type="primary" ghost href="/space_analyze?queryAll=1" target="_blank">分析全部空间</a-button>
-        <a-button type="primary" ghost href="/space_analyze?queryPublic=1" target="_blank">分析公共图库</a-button>
+        <a-button type="primary" ghost href="/space_analyze?queryAll=1" target="_blank"
+          >分析全部空间</a-button
+        >
+        <a-button type="primary" ghost href="/space_analyze?queryPublic=1" target="_blank"
+          >分析公共图库</a-button
+        >
       </a-space>
     </a-flex>
     <div style="margin-bottom: 16px"></div>
     <!--    搜索表单-->
     <a-form layout="inline" :model="searchParams" @finish="doSearch">
       <a-form-item label="空间名称">
-        <a-input
-          v-model:value="searchParams.spaceName"
-          placeholder="输入空间名称"
-          allow-clear
-        />
+        <a-input v-model:value="searchParams.spaceName" placeholder="输入空间名称" allow-clear />
       </a-form-item>
       <a-form-item label="空间级别" name="spaceLevel">
         <a-select
           v-model:value="searchParams.spaceLevel"
           :options="SPACE_LEVEL_OPTIONS"
           placeholder="请选择空间级别"
+          style="min-width: 180px"
+          allow-clear
+        />
+      </a-form-item>
+      <a-form-item label="空间类别" name="spaceType">
+        <a-select
+          v-model:value="searchParams.spaceLevel"
+          :options="SPACE_TYPE_OPTIONS"
+          placeholder="请选择空间类别"
           style="min-width: 180px"
           allow-clear
         />
@@ -46,9 +55,13 @@
         <template v-if="column.dataIndex === 'spaceLevel'">
           <div>{{ SPACE_LEVEL_MAP[record.spaceLevel] }}</div>
         </template>
+        <!--        空间类别-->
+        <template v-if="column.dataIndex === 'spaceType'">
+          <a-tag>{{ SPACE_TYPE_MAP[record.spaceType] }}</a-tag>
+        </template>
         <template v-if="column.dataIndex === 'spaceUseInfo'">
-          <div>大小：{{ formatSize(record.totalSize) }} / {{ formatSize(record.maxSize)}}</div>
-          <div>数量：{{ record.totalCount }} / {{ record.maxCount}}</div>
+          <div>大小：{{ formatSize(record.totalSize) }} / {{ formatSize(record.maxSize) }}</div>
+          <div>数量：{{ record.totalCount }} / {{ record.maxCount }}</div>
         </template>
         <template v-if="column.dataIndex === 'createTime'">
           {{ dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') }}
@@ -59,10 +72,10 @@
         <template v-else-if="column.key === 'action'">
           <a-space wrap>
             <a-button type="link" :href="`/space_analyze?spaceId=${record.id}`" target="_blank"
-            >分析
+              >分析
             </a-button>
             <a-button type="link" :href="`/add_space?id=${record.id}`" target="_blank"
-            >编辑
+              >编辑
             </a-button>
             <a-button danger @click="doDelete(record.id)">删除</a-button>
           </a-space>
@@ -73,15 +86,16 @@
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import {
-  deleteSpaceUsingPost,
-  listSpaceByPageUsingPost,
-} from '@/api/spaceController'
+import { deleteSpaceUsingPost, listSpaceByPageUsingPost } from '@/api/spaceController'
 import { message } from 'ant-design-vue'
 import dayjs from 'dayjs'
-import { SPACE_LEVEL_MAP, SPACE_LEVEL_OPTIONS } from '../../constants/space'
+import {
+  SPACE_LEVEL_MAP,
+  SPACE_LEVEL_OPTIONS,
+  SPACE_TYPE_ENUM,
+  SPACE_TYPE_MAP, SPACE_TYPE_OPTIONS
+} from '../../constants/space'
 import { formatSize } from '../../utils'
-
 
 const columns = [
   {
@@ -96,6 +110,10 @@ const columns = [
   {
     title: '空间级别',
     dataIndex: 'spaceLevel',
+  },
+  {
+    title: '空间类别',
+    dataIndex: 'spaceType',
   },
   {
     title: '使用情况',
@@ -119,7 +137,6 @@ const columns = [
     key: 'action',
   },
 ]
-
 
 const dataList = ref<API.Space[]>([])
 const total = ref(0)
@@ -170,8 +187,6 @@ const doDelete = async (id: string) => {
     message.error('删除失败')
   }
 }
-
-
 
 const fetchData = async () => {
   const res = await listSpaceByPageUsingPost({

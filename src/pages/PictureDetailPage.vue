@@ -69,13 +69,13 @@
                 <DownloadOutlined />
               </template>
             </a-button>
-            <a-button v-if="canEdit" :icon="h(ShareAltOutlined)" type="primary" ghost @click="doShare">
+            <a-button  :icon="h(ShareAltOutlined)" type="primary" ghost @click="doShare">
               分享
             </a-button>
             <a-button v-if="canEdit" :icon="h(EditOutlined)" type="default" @click="doEdit">
               编辑
             </a-button>
-            <a-button v-if="canEdit" :icon="h(DeleteOutlined)" @click="doDelete" danger>
+            <a-button v-if="canDelete" :icon="h(DeleteOutlined)" @click="doDelete" danger>
               删除
             </a-button>
           </a-space>
@@ -98,6 +98,7 @@ import { downloadImage, formatSize, toHexColor } from '@/utils'
 import { EditOutlined, DeleteOutlined, DownloadOutlined, ShareAltOutlined } from '@ant-design/icons-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import ShareModal from '@/components/ShareModal.vue'
+import { SPACE_PERMISSION_ENUM } from '@/constants/space'
 
 interface Props {
   id: number | string
@@ -107,27 +108,19 @@ const props = defineProps<Props>()
 
 const router = useRouter()
 
-//搜索条件
-const searchParams = reactive<API.PictureQueryRequest>({
-  current: 1,
-  pageSize: 12,
-  sortField: 'createTime',
-  sortOrder: 'descend',
-})
-
 const loginUserStore = useLoginUserStore()
 
-// 判断是否可以编辑
-const canEdit = computed(() => {
-  const loginUser = loginUserStore.loginUser
-  //未登录不能编辑
-  if (!loginUser.id) {
-    return false
-  }
-  //本人或管理员才能编辑
-  const user = picture.value.user || {}
-  return loginUser.id === user.id || loginUser.userRole === 'admin'
-})
+// 判断是否可以编辑 (后端用sa-token鉴权，canEdit逻辑改为从权限列表中检查，详情看下面的canEdit)
+// const canEdit = computed(() => {
+//   const loginUser = loginUserStore.loginUser
+//   //未登录不能编辑
+//   if (!loginUser.id) {
+//     return false
+//   }
+//   //本人或管理员才能编辑
+//   const user = picture.value.user || {}
+//   return loginUser.id === user.id || loginUser.userRole === 'admin'
+// })
 
 const canDownload = computed(() => {
   const loginUser = loginUserStore.loginUser
@@ -164,6 +157,17 @@ const doDownload = () => {
 }
 
 const picture = ref<API.PictureVo>({})
+
+//通用权限检查函数
+function createPermissionChecker(permission: string) {
+  return computed(() => {
+    return (picture.value.permissionList ?? []).includes(permission)
+  })
+}
+
+// 定义权限检查
+const canEdit = createPermissionChecker(SPACE_PERMISSION_ENUM.PICTURE_EDIT)
+const canDelete = createPermissionChecker(SPACE_PERMISSION_ENUM.PICTURE_DELETE)
 
 //获取图片信息
 const fetchPictureDetail = async () => {
