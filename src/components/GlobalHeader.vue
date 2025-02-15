@@ -34,14 +34,16 @@
                     </span>
                   </template>
                 </a-avatar>
-                {{ loginUserStore.loginUser.userName ?? '匿名' }}
+                <div class="user-name">
+                  {{ loginUserStore.loginUser.userName ?? '匿名' }}
+                </div>
               </a-space>
 
               <template #overlay>
                 <a-menu>
                   <a-menu-item>
                     <router-link to="/my_space">
-                      <UserOutlined/>
+                      <UserOutlined />
                       我的空间
                     </router-link>
                   </a-menu-item>
@@ -63,7 +65,7 @@
 </template>
 <script lang="ts" setup>
 import { computed, h, ref } from 'vue'
-import { HomeOutlined, LogoutOutlined, UserOutlined} from '@ant-design/icons-vue'
+import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { MenuProps, message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
@@ -151,10 +153,7 @@ const current = ref<string[]>(['home'])
 router.afterEach((to) => {
   current.value = [to.path]
 })
-
-
 </script>
-
 
 <style scoped>
 #globalHeader .title-bar {
@@ -170,5 +169,12 @@ router.afterEach((to) => {
   color: black;
   font-size: 18px;
   margin-left: 16px;
+}
+
+.user-login-status .user-name {
+  max-width: 100%; /* 根据需要调整 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

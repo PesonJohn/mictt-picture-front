@@ -18,32 +18,51 @@
       outputType="png"
     />
     <div style="margin-bottom: 16px" />
+    <!-- 协同编辑操作 -->
+    <div class="image-edit-actions" v-if="isTeamSpace">
+      <a-space>
+        <a-button v-if="editingUser" disabled >{{ editingUser.userName }} 正在编辑</a-button>
+        <a-button v-if="canEnterEdit" type="primary" ghost @click="enterEdit">进入编辑</a-button>
+        <a-button v-if="canExitEdit" danger ghost @click="exitEdit">退出编辑</a-button>
+      </a-space>
+    </div>
+    <div style="margin-bottom: 16px" />
     <!-- 图片操作 -->
     <div class="image-cropper-actions">
       <a-space>
-        <a-button @click="rotateLeft">向左旋转</a-button>
-        <a-button @click="rotateRight">向右旋转</a-button>
-        <a-button @click="changeScale(1)">放大</a-button>
-        <a-button @click="changeScale(-1)">缩小</a-button>
-        <a-button type="primary" :loading="loading" @click="handleConfirm">确认裁剪</a-button>
+        <a-button @click="rotateLeft" :disabled="!canEdit">向左旋转</a-button>
+        <a-button @click="rotateRight" :disabled="!canEdit">向右旋转</a-button>
+        <a-button @click="changeScale(1)" :disabled="!canEdit">放大</a-button>
+        <a-button @click="changeScale(-1)" :disabled="!canEdit">缩小</a-button>
+        <a-button type="primary" :loading="loading" :disabled="!canEdit" @click="handleConfirm">确认裁剪</a-button>
       </a-space>
     </div>
   </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
 import { uploadPictureUsingPost } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import  PictureEditWebSocket from '@/utils/pictureEditWebsocket'
+import { PICTURE_EDIT_ACTION_ENUM, PICTURE_EDIT_MESSAGE_TYPE_ENUM } from '@/constants/picture'
+import { SPACE_TYPE_ENUM } from '@/constants/space'
 
 interface Props {
   imageUrl?: string
   picture?: API.PictureVo
   spaceId?: number
+  space?: API.SpaceVo
   onSuccess?: (newPicture: API.PictureVo) => void
 }
 
 const props = defineProps<Props>()
+
+//是否为团队空间
+const isTeamSpace = computed(() => {
+  return props.space?.spaceType === SPACE_TYPE_ENUM.TEAM
+})
 
 // 编辑器组件的引用
 const cropperRef = ref()
@@ -51,16 +70,23 @@ const cropperRef = ref()
 // 向左旋转
 const rotateLeft = () => {
   cropperRef.value.rotateLeft()
+  editAction(PICTURE_EDIT_ACTION_ENUM.ROTATE_LEFT)
 }
 
 // 向右旋转
 const rotateRight = () => {
   cropperRef.value.rotateRight()
+  editAction(PICTURE_EDIT_ACTION_ENUM.ROTATE_RIGHT)
 }
 
 // 缩放
 const changeScale = (num: number) => {
   cropperRef.value.changeScale(num)
+  if (num > 0){
+    editAction(PICTURE_EDIT_ACTION_ENUM.ZOOM_IN)
+  }else {
+    editAction(PICTURE_EDIT_ACTION_ENUM.ZOOM_OUT)
+  }
 }
 
 const loading = ref<boolean>(false)
@@ -109,12 +135,142 @@ const openModal = () => {
 
 const closeModal = () => {
   visible.value = false
+  if (websocket){
+    websocket.disconnect()
+  }
+  editingUser.value = undefined
 }
 
 //暴露函数给父组件
 defineExpose({
   openModal,
 })
+
+//实时编辑
+const loginUserStore = useLoginUserStore()
+const loginUser = loginUserStore.loginUser
+
+//正在编辑的用户
+const editingUser = ref<API.UserVo>()
+//当前用户是否可以进入编辑
+const canEnterEdit = computed(() => {
+  return !editingUser.value
+})
+//正在编辑的用户是本人 可退出编辑
+const canExitEdit = computed(() => {
+  return editingUser.value?.id === loginUser.id
+})
+//可以点击编辑图片的操作按钮
+const canEdit = computed(() => {
+  //不是团队空间默认可以编辑
+  if (!isTeamSpace.value){
+    return true
+  }
+  //团队空间只有编辑者以上才能协同编辑
+  return editingUser.value?.id === loginUser.id
+})
+
+//编写 WebSocket逻辑
+let websocket: PictureEditWebSocket | null
+
+//初始化Websocket连接 绑定监听事件
+const initWebSocket = () => {
+  const pictureId = props.picture?.id
+  if (!pictureId || !visible.value)return
+  //防止之前的连接未释放
+  if (websocket){
+    websocket.disconnect()
+  }
+  //创建websocket实例
+  websocket = new PictureEditWebSocket(pictureId)
+  //建立连接
+  websocket.connect()
+  //监听一系列事件
+  websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.INFO,(msg) => {
+    console.log('收到图片编辑通知：',msg)
+    message.info(msg.message)
+  })
+  websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.ERROR, (msg) => {
+    console.log('收到错误通知：',msg)
+    message.error(msg.message)
+  })
+  websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.ENTER_EDIT, (msg) => {
+    console.log('收到进入编辑通知：',msg)
+    editingUser.value = msg.user
+    message.info(msg.message)
+  })
+  websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.EDIT_ACTION, (msg) => {
+    console.log('收到编辑操作通知：',msg)
+    message.info(msg.message)
+    //根据收到的编辑操作执行响应的操作
+    switch (msg.editAction) {
+      case PICTURE_EDIT_ACTION_ENUM.ROTATE_LEFT:
+        rotateLeft()
+        break
+      case PICTURE_EDIT_ACTION_ENUM.ROTATE_RIGHT:
+        rotateRight()
+        break
+      case PICTURE_EDIT_ACTION_ENUM.ZOOM_IN:
+        changeScale(1)
+        break
+      case PICTURE_EDIT_ACTION_ENUM.ZOOM_OUT:
+        changeScale(-1)
+        break
+    }
+  })
+  websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.EXIT_EDIT, (msg) => {
+    console.log('收到退出编辑通知：',msg)
+    editingUser.value = undefined
+    message.info(msg.message)
+  })
+}
+
+//监听属性和visible变化 初始化websocket连接
+watchEffect(() => {
+  //只有团队空间才初始化websocket连接
+  if (isTeamSpace.value){
+    initWebSocket()
+  }
+
+})
+
+//组件销毁时 断开websocket连接
+onUnmounted(() => {
+  //断开websocket连接
+  if (websocket){
+    websocket.disconnect()
+  }
+  editingUser.value = undefined
+})
+
+//进入编辑
+const enterEdit = () => {
+  if (websocket){
+    //发送进入编辑状态的请求
+    websocket.sendMessage({
+      type: PICTURE_EDIT_MESSAGE_TYPE_ENUM.ENTER_EDIT
+    })
+  }
+}
+//退出编辑
+const exitEdit = () => {
+  if (websocket){
+    //发送退出编辑状态的请求
+    websocket.sendMessage({
+      type: PICTURE_EDIT_MESSAGE_TYPE_ENUM.EXIT_EDIT
+    })
+  }
+}
+//编辑图片操作
+const editAction = (action: string) => {
+  if (websocket){
+    //发送编辑操作的请求
+    websocket.sendMessage({
+      type: PICTURE_EDIT_MESSAGE_TYPE_ENUM.EDIT_ACTION,
+      editAction: action
+    })
+  }
+}
 </script>
 
 <style>

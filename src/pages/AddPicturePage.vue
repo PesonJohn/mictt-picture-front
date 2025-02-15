@@ -23,6 +23,7 @@
         ref="imageCropperRef"
         :imageUrl="picture?.url"
         :picture="picture"
+        :space="space"
         :spaceId="spaceId"
         :onSuccess="onCropSuccess"
       />
@@ -74,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, h } from 'vue'
+import { ref, reactive, onMounted, computed, h, watchEffect } from 'vue'
 import PictureUpload from '@/components/PictureUpload.vue'
 import { message } from 'ant-design-vue'
 import {
@@ -89,6 +90,7 @@ import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
 import ImageCropper from '@/components/ImageCropper.vue'
 import { EditOutlined,FullscreenOutlined } from '@ant-design/icons-vue'
 import ImageOutPainting from '@/components/ImageOutPainting.vue'
+import { getSpaceVoByIdUsingGet } from '@/api/spaceController'
 
 const picture = ref<API.PictureVo>()
 // 因为上传图片后图片的信息已经在数据中，有对应的图片id，实际上就是编辑图片信息
@@ -213,6 +215,27 @@ const doImagePainting = () => {
 const onImageOutPaintingSuccess = (newPicture: API.PictureVo) => {
   picture.value = newPicture
 }
+
+//获取空间信息
+const space = ref<API.SpaceVo>()
+
+// 获取空间信息
+const fetchSpace = async () => {
+  // 获取数据
+  if (spaceId.value) {
+    const res = await getSpaceVoByIdUsingGet({
+      id: spaceId.value,
+    })
+    if (res.data.code === 0 && res.data.data) {
+      space.value = res.data.data
+    }
+  }
+}
+
+watchEffect(() => {
+  fetchSpace()
+})
+
 </script>
 <style scoped>
 #addPicturePage {
