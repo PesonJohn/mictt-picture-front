@@ -5,7 +5,7 @@
     <!--    图片信息表单-->
     <a-form  name="formData" layout="vertical" :model="formData" @finish="handleSubmit">
       <a-form-item name="searchText" label="关键词">
-        <a-input v-model:value="formData.name" placeholder="请输入关键词" allow-clear />
+        <a-input v-model:value="formData.searchText" placeholder="请输入关键词" allow-clear />
       </a-form-item>
       <a-form-item name="count" label="数量">
         <a-input-number

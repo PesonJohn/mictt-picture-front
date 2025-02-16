@@ -94,7 +94,7 @@ const startPolling = () => {
           resultImageUrl.value = taskResult?.outputImageUrl
           clearPolling()
         }else if (taskResult?.taskStatus === 'FAILED'){
-          message.error('扩图任务执行失败')
+          message.error('任务失败，图片过大或者过小')
           clearPolling()
         }
 
